@@ -458,7 +458,15 @@ function _setSliderMax(){{
 }}
 _setSliderMax();
 window.addEventListener('resize',_setSliderMax);
-_sl.addEventListener('input',function(){{_ch.style.maxWidth=this.value+'px';_lb.textContent=this.value+'px';}});
+_sl.addEventListener('input',function(){{
+  var anchor=null,anchorTop=0;
+  document.querySelectorAll('.bubble-wrap').forEach(function(b){{
+    if(!anchor&&b.getBoundingClientRect().bottom>0){{anchor=b;anchorTop=b.getBoundingClientRect().top;}}
+  }});
+  _ch.style.maxWidth=this.value+'px';
+  _lb.textContent=this.value+'px';
+  if(anchor)window.scrollBy(0,anchor.getBoundingClientRect().top-anchorTop);
+}});
 </script>
 </body>
 </html>"""
