@@ -298,6 +298,8 @@ def format_html(url: str, title: str, messages: list[dict]) -> str:
     converter = md_lib.Markdown(extensions=["tables", "fenced_code", "md_in_html"])
 
     bubbles = []
+    md_items: list[dict] = []
+    i = 0
     for msg in messages:
         content = _clean(msg["content"])
         if not content:
@@ -305,9 +307,19 @@ def format_html(url: str, title: str, messages: list[dict]) -> str:
         converter.reset()
         body = converter.convert(content)
         role_class = "user" if msg["role"] == "user" else "model"
+        label = ROLE_LABELS.get(msg["role"], msg["role"].capitalize())
+        md_items.append({"md": f"### {label}\n\n{content}"})
         bubbles.append(
-            f'<div class="bubble-wrap {role_class}"><div class="bubble">{body}</div></div>'
+            f'<div class="bubble-wrap {role_class}" data-idx="{i}">'
+            f'<div class="bubble">{body}</div>'
+            f'<button class="copy-btn" title="Copy as markdown">⎘</button>'
+            f'</div>'
         )
+        i += 1
+
+    full_md = format_markdown(url, clean_title, messages)
+    md_items_json = json.dumps(md_items, ensure_ascii=False)
+    full_md_json = json.dumps(full_md, ensure_ascii=False)
 
     return f"""<!DOCTYPE html>
 <html lang="zh-TW">
@@ -340,8 +352,13 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgro
 .header h1{{font-size:16px;color:#555;font-weight:600}}
 .header p{{font-size:12px;color:#999;margin-top:3px}}
 .header a{{color:#0084ff;text-decoration:none}}
+.header-controls{{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px;flex-wrap:wrap}}
+.ctrl-btn{{background:#fff;border:1px solid #ccc;border-radius:8px;padding:4px 14px;font-size:12px;cursor:pointer;color:#444;transition:background .15s}}
+.ctrl-btn:hover{{background:#f0f0f0}}
+.width-ctrl{{display:flex;align-items:center;gap:6px;font-size:12px;color:#666}}
+.width-ctrl input[type=range]{{width:130px;accent-color:#0084ff;cursor:pointer}}
 .chat{{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:4px}}
-.bubble-wrap{{display:flex;padding:2px 0}}
+.bubble-wrap{{display:flex;padding:2px 0;align-items:center}}
 .bubble-wrap.user{{justify-content:flex-end}}
 .bubble-wrap.model{{justify-content:flex-start}}
 .bubble{{padding:9px 13px;border-radius:18px;max-width:85%;word-break:break-word;line-height:1.55;font-size:15px}}
@@ -367,6 +384,12 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgro
 .user .bubble hr{{border-color:rgba(255,255,255,.3)}}
 .bubble sub,.bubble sup{{font-size:.75em;line-height:0;position:relative;vertical-align:baseline}}
 .bubble sup{{top:-.4em}}.bubble sub{{bottom:-.2em}}
+.copy-btn{{display:none;flex-shrink:0;border:none;border-radius:7px;padding:3px 8px;font-size:14px;line-height:1;cursor:pointer;transition:background .15s}}
+.bubble-wrap:hover .copy-btn{{display:inline-block}}
+.model .copy-btn{{order:1;margin-left:6px;background:rgba(0,0,0,.1);color:#555}}
+.model .copy-btn:hover{{background:rgba(0,0,0,.2)}}
+.user .copy-btn{{order:-1;margin-right:6px;background:rgba(0,0,0,.1);color:#555}}
+.user .copy-btn:hover{{background:rgba(0,0,0,.2)}}
 </style>
 <script>
 document.addEventListener('keydown',function(e){{
@@ -384,10 +407,40 @@ document.addEventListener('keydown',function(e){{
 <div class="header">
   <h1>{clean_title}</h1>
   <p>Saved {now} &nbsp;&middot;&nbsp; <a href="{url}" target="_blank">{url}</a></p>
+  <div class="header-controls">
+    <button class="ctrl-btn" id="copy-all">Copy MD</button>
+    <div class="width-ctrl">
+      Width: <input type="range" id="width-slider" min="400" max="1800" value="1200" step="20">
+      <span id="width-label">1200px</span>
+    </div>
+  </div>
 </div>
-<div class="chat">
+<div class="chat" id="chat">
 {"".join(bubbles)}
 </div>
+<script>
+var _md={md_items_json};
+var _full={full_md_json};
+document.querySelectorAll('.copy-btn').forEach(function(btn){{
+  btn.addEventListener('click',function(e){{
+    e.stopPropagation();
+    var idx=parseInt(this.closest('.bubble-wrap').dataset.idx);
+    navigator.clipboard.writeText(_md[idx].md).then(function(){{
+      btn.textContent='✓';
+      setTimeout(function(){{btn.textContent='⎘';}},1500);
+    }});
+  }});
+}});
+document.getElementById('copy-all').addEventListener('click',function(){{
+  var b=this;
+  navigator.clipboard.writeText(_full).then(function(){{
+    b.textContent='✓ Copied!';
+    setTimeout(function(){{b.textContent='Copy MD';}},2000);
+  }});
+}});
+var _sl=document.getElementById('width-slider'),_ch=document.getElementById('chat'),_lb=document.getElementById('width-label');
+_sl.addEventListener('input',function(){{_ch.style.maxWidth=this.value+'px';_lb.textContent=this.value+'px';}});
+</script>
 </body>
 </html>"""
 
