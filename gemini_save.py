@@ -358,8 +358,9 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgro
 .header-controls{{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px;flex-wrap:wrap}}
 .ctrl-btn{{background:#fff;border:1px solid #ccc;border-radius:8px;padding:4px 14px;font-size:12px;cursor:pointer;color:#444;transition:background .15s}}
 .ctrl-btn:hover{{background:#f0f0f0}}
-.width-ctrl{{display:flex;align-items:center;gap:6px;font-size:12px;color:#666}}
-.width-ctrl input[type=range]{{width:130px;accent-color:#0084ff;cursor:pointer}}
+.width-float{{position:fixed;top:20px;left:20px;background:rgba(255,255,255,.85);border:1px solid #ddd;border-radius:10px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,.12);z-index:100;backdrop-filter:blur(6px)}}
+.width-ctrl{{display:flex;align-items:center;gap:8px;font-size:12px;color:#555}}
+.width-ctrl input[type=range]{{width:110px;accent-color:#0084ff;cursor:pointer}}
 .chat{{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:4px}}
 .bubble-wrap{{display:flex;padding:2px 0;align-items:flex-end}}
 .bubble-wrap.user{{justify-content:flex-end}}
@@ -415,14 +416,16 @@ document.addEventListener('keydown',function(e){{
   <p>Saved {now} &nbsp;&middot;&nbsp; <a href="{url}" target="_blank">{url}</a></p>
   <div class="header-controls">
     <button class="ctrl-btn" id="copy-all">Copy MD</button>
-    <div class="width-ctrl">
-      Width: <input type="range" id="width-slider" min="400" max="1800" value="1200" step="20">
-      <span id="width-label">1200px</span>
-    </div>
   </div>
 </div>
 <div class="chat" id="chat">
 {"".join(bubbles)}
+</div>
+<div class="width-float">
+  <div class="width-ctrl">
+    Width: <input type="range" id="width-slider" min="800" value="1200" step="20">
+    <span id="width-label">1200px</span>
+  </div>
 </div>
 <script>
 var _md={md_items_json};
@@ -445,6 +448,16 @@ document.getElementById('copy-all').addEventListener('click',function(){{
   }});
 }});
 var _sl=document.getElementById('width-slider'),_ch=document.getElementById('chat'),_lb=document.getElementById('width-label');
+function _setSliderMax(){{
+  var pres=document.querySelectorAll('.bubble pre');
+  pres.forEach(function(p){{p.style.display='none';}});
+  _ch.style.maxWidth='max-content';
+  _sl.max=Math.min(_ch.offsetWidth,window.innerWidth,screen.width);
+  _ch.style.maxWidth=_sl.value+'px';
+  pres.forEach(function(p){{p.style.display='';}});
+}}
+_setSliderMax();
+window.addEventListener('resize',_setSliderMax);
 _sl.addEventListener('input',function(){{_ch.style.maxWidth=this.value+'px';_lb.textContent=this.value+'px';}});
 </script>
 </body>
