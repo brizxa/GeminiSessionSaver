@@ -293,7 +293,7 @@ def format_text(url: str, title: str, messages: list[dict]) -> str:
 
 
 def format_html(url: str, title: str, messages: list[dict]) -> str:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     clean_title = title or "Gemini Shared Conversation"
     converter = md_lib.Markdown(extensions=["tables", "fenced_code", "md_in_html"])
 
@@ -311,7 +311,10 @@ def format_html(url: str, title: str, messages: list[dict]) -> str:
         md_items.append({"md": f"### {label}\n\n{content}"})
         bubbles.append(
             f'<div class="bubble-wrap {role_class}" data-idx="{i}">'
+            f'<div class="bubble-col">'
             f'<div class="bubble">{body}</div>'
+            f'<time class="ts">{now}</time>'
+            f'</div>'
             f'<button class="copy-btn" title="Copy as markdown">⎘</button>'
             f'</div>'
         )
@@ -358,10 +361,14 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgro
 .width-ctrl{{display:flex;align-items:center;gap:6px;font-size:12px;color:#666}}
 .width-ctrl input[type=range]{{width:130px;accent-color:#0084ff;cursor:pointer}}
 .chat{{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:4px}}
-.bubble-wrap{{display:flex;padding:2px 0;align-items:center}}
+.bubble-wrap{{display:flex;padding:2px 0;align-items:flex-end}}
 .bubble-wrap.user{{justify-content:flex-end}}
 .bubble-wrap.model{{justify-content:flex-start}}
-.bubble{{padding:9px 13px;border-radius:18px;max-width:85%;word-break:break-word;line-height:1.55;font-size:15px}}
+.bubble-col{{display:flex;flex-direction:column;max-width:85%}}
+.user .bubble-col{{align-items:flex-end}}
+.model .bubble-col{{align-items:flex-start}}
+.ts{{font-size:11px;color:#666;margin-top:3px;padding:0 4px;white-space:nowrap}}
+.bubble{{padding:9px 13px;border-radius:18px;word-break:break-word;line-height:1.55;font-size:15px}}
 .bubble img{{max-width:100%;height:auto;border-radius:8px;display:block}}
 .user .bubble{{background:#0084ff;color:#fff;border-radius:18px 18px 4px 18px}}
 .model .bubble{{background:#fff;color:#111;border-radius:4px 18px 18px 18px;box-shadow:0 1px 1px rgba(0,0,0,.1)}}
@@ -384,12 +391,11 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgro
 .user .bubble hr{{border-color:rgba(255,255,255,.3)}}
 .bubble sub,.bubble sup{{font-size:.75em;line-height:0;position:relative;vertical-align:baseline}}
 .bubble sup{{top:-.4em}}.bubble sub{{bottom:-.2em}}
-.copy-btn{{display:none;flex-shrink:0;border:none;border-radius:7px;padding:3px 8px;font-size:14px;line-height:1;cursor:pointer;transition:background .15s}}
+.copy-btn{{display:none;flex-shrink:0;align-self:flex-end;margin-bottom:2px;border:none;border-radius:7px;padding:3px 8px;font-size:14px;line-height:1;cursor:pointer;transition:background .15s;background:rgba(0,0,0,.1);color:#555}}
+.copy-btn:hover{{background:rgba(0,0,0,.2)}}
 .bubble-wrap:hover .copy-btn{{display:inline-block}}
-.model .copy-btn{{order:1;margin-left:6px;background:rgba(0,0,0,.1);color:#555}}
-.model .copy-btn:hover{{background:rgba(0,0,0,.2)}}
-.user .copy-btn{{order:-1;margin-right:6px;background:rgba(0,0,0,.1);color:#555}}
-.user .copy-btn:hover{{background:rgba(0,0,0,.2)}}
+.model .copy-btn{{order:1;margin-left:6px}}
+.user .copy-btn{{order:-1;margin-right:6px}}
 </style>
 <script>
 document.addEventListener('keydown',function(e){{
